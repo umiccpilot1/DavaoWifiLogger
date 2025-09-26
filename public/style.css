@@ -1,0 +1,162 @@
+:root {
+    --bs-primary-rgb: 13, 110, 253;
+    --bs-danger-rgb: 220, 53, 69;
+}
+
+body {
+    background-color: #f0f2f5;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+.header {
+    background-color: white;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #dee2e6;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 1020;
+}
+
+.header h4 {
+    margin: 0;
+}
+
+.main-content {
+    padding: 1.5rem;
+}
+
+.controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.month-navigator {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.month-navigator h2 {
+    margin: 0;
+    font-size: 1.75rem;
+    font-weight: 500;
+}
+
+/* Employee Card */
+.employee-card {
+    background-color: white;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    transition: box-shadow .2s ease-in-out;
+}
+
+.employee-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.employee-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
+.employee-info h5 {
+    margin-bottom: 0.25rem;
+    font-size: 1.1rem;
+}
+
+.employee-info .mac-address {
+    font-size: 0.8rem;
+    color: #6c757d;
+    word-break: break-all;
+}
+
+.days-badge {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.3em 0.6em;
+}
+
+/* Calendar */
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+}
+
+.calendar-header, .calendar-day {
+    text-align: center;
+    font-size: 0.8rem;
+    aspect-ratio: 1 / 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.calendar-header {
+    font-weight: bold;
+    color: #6c757d;
+}
+
+.calendar-day {
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+}
+
+.calendar-day.present {
+    background-color: rgb(var(--bs-primary-rgb));
+    color: white;
+    border-color: rgb(var(--bs-primary-rgb));
+    font-weight: bold;
+}
+
+.calendar-day.absent {
+    background-color: rgba(var(--bs-danger-rgb), 0.1);
+    border: 1px dashed rgba(var(--bs-danger-rgb), 0.4);
+    color: rgb(var(--bs-danger-rgb));
+}
+
+.calendar-day.weekend {
+    background-color: #f8f9fa;
+}
+
+.calendar-day.empty {
+    background-color: transparent;
+    border-color: transparent;
+}
+
+.status-bar {
+    margin-bottom: 1rem;
+    font-style: italic;
+    color: #6c757d;
+}
+
+.legend {
+    display: flex;
+    gap: 1.5rem;
+    font-size: 0.9rem;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.legend-color {
+    width: 15px;
+    height: 15px;
+    border-radius: 3px;
+}
+
+#syncButton .spinner-border {
+    margin-right: 0.5rem;
+}
