@@ -160,19 +160,63 @@ $(document).ready(function() {
             const dayOfWeek = currentDay.day();
             let classes = 'calendar-day';
 
-            if (presentSet.has(day)) {
+            const dayStr = currentDay.format('YYYY-MM-DD');
+            const isPresent = presentSet.has(day);
+            if (isPresent) {
                 classes += ' present';
             } else if (dayOfWeek > 0 && dayOfWeek < 6) { // It's a weekday (Mon-Fri)
                 classes += ' absent';
             } else { // It's a weekend
                 classes += ' weekend';
             }
-            
-            calendar += `<div class="${classes}">${day}</div>`;
+            const hoverAttr = isPresent ? ` data-hover="1" data-date="${dayStr}"` : '';
+            calendar += `<div class="${classes}"${hoverAttr} data-day="${day}">${day}</div>`;
         }
 
         calendar += '</div>';
+        // After generating HTML, attach hover events using event delegation
+        // Use a small timeout to ensure elements are in DOM
+        setTimeout(() => attachHoverHandlers(), 0);
         return calendar;
+    }
+
+    function attachHoverHandlers() {
+        const container = elements.reportContainer;
+        container.off('mouseenter', '.calendar-day.present');
+        container.off('mouseleave', '.calendar-day.present');
+        container.on('mouseenter', '.calendar-day.present', async function() {
+            const $el = $(this);
+            const date = $el.data('date');
+            const $card = $el.closest('.employee-card');
+            const employeeName = $card.data('name');
+
+            // Create tooltip element
+            let $tip = $el.find('.hover-tip');
+            if ($tip.length === 0) {
+                $tip = $('<div class="hover-tip">Loading…</div>');
+                $el.append($tip);
+            }
+            $tip.text('Loading…').addClass('visible');
+
+            try {
+                const resp = await fetch(`${API_URL}/api/day-sessions?name=${encodeURIComponent(employeeName)}&date=${encodeURIComponent(date)}`);
+                if (!resp.ok) throw new Error('Failed');
+                const data = await resp.json();
+                if (!data.sessions || data.sessions.length === 0) {
+                    $tip.html('<div class="tip-title">No sessions</div>');
+                } else {
+                    const items = data.sessions.map(s => `<div class="tip-row"><span>In</span><b>${s.in_time}</b></div><div class="tip-row"><span>Out</span><b>${s.out_time}</b></div>`).join('');
+                    $tip.html(`<div class="tip-title">${employeeName}</div><div class="tip-sub">${date}</div>${items}<div class="tip-total">Total: ${data.total_hours}h</div>`);
+                }
+            } catch (e) {
+                $tip.text('Error loading');
+            }
+        });
+        container.on('mouseleave', '.calendar-day.present', function() {
+            const $tip = $(this).find('.hover-tip');
+            $tip.removeClass('visible');
+            setTimeout(() => $tip.remove(), 150);
+        });
     }
 
     function getWorkingDaysInMonth(date) {

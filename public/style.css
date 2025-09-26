@@ -133,6 +133,35 @@ body {
     border-color: transparent;
 }
 
+/* Hover tooltip inside calendar day */
+.calendar-day {
+    position: relative;
+}
+.hover-tip {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translate(-50%, 8px);
+    background: #212529;
+    color: #fff;
+    padding: 8px 10px;
+    border-radius: 6px;
+    min-width: 220px;
+    z-index: 10;
+    font-size: 12px;
+    line-height: 1.2;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .15s ease;
+}
+.hover-tip.visible { opacity: 0.98; }
+.hover-tip .tip-title { font-weight: 600; margin-bottom: 2px; }
+.hover-tip .tip-sub { opacity: .8; margin-bottom: 6px; }
+.hover-tip .tip-row { display: flex; justify-content: space-between; gap: 10px; }
+.hover-tip .tip-row + .tip-row { margin-top: 2px; }
+.hover-tip .tip-total { margin-top: 6px; font-weight: 600; text-align: right; }
+
 .status-bar {
     margin-bottom: 1rem;
     font-style: italic;

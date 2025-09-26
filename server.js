@@ -59,6 +59,40 @@ function isLikelyEmployeeName(rawName) {
     return alphaParts.length >= 2;
 }
 
+// --- Presence helpers ---
+function toLocalISOString(d) {
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
+function clampIntervalToDay([start, end], dayStr) {
+    const dayStart = new Date(`${dayStr}T00:00:00`);
+    const dayEnd = new Date(`${dayStr}T23:59:59`);
+    const s = new Date(Math.max(start.getTime(), dayStart.getTime()));
+    const e = new Date(Math.min(end.getTime(), dayEnd.getTime()));
+    if (e < s) return null;
+    return [s, e];
+}
+
+function mergeSessions(intervals, gapMinutes = 30) {
+    if (!intervals.length) return [];
+    intervals.sort((a, b) => a[0] - b[0]);
+    const merged = [];
+    let [curS, curE] = intervals[0];
+    for (let i = 1; i < intervals.length; i++) {
+        const [s, e] = intervals[i];
+        const gap = (s.getTime() - curE.getTime()) / (1000 * 60);
+        if (gap > gapMinutes) {
+            merged.push([curS, curE]);
+            curS = s; curE = e;
+        } else {
+            if (e > curE) curE = e;
+        }
+    }
+    merged.push([curS, curE]);
+    return merged;
+}
+
 // --- Reusable Data Fetching Function ---
 async function getMonthlyPresenceData(year, month) {
     return new Promise((resolve, reject) => {
@@ -267,4 +301,58 @@ app.get('/api/export-excel', async (req, res) => {
 // --- Start Server ---
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
+});
+
+/**
+ * @route GET /api/day-sessions
+ * @desc  Detailed in/out sessions for an employee on a specific date
+ * @query name, date, gapMinutes? (default 30)
+ */
+app.get('/api/day-sessions', async (req, res) => {
+    try {
+        const { name, date, gapMinutes } = req.query;
+        if (!name || !date) return res.status(400).json({ error: 'name and date are required' });
+        const gap = Number(gapMinutes || 30);
+
+        const sql = `SELECT Name, FirstSeen, LastSeen FROM logs 
+                     WHERE date(FirstSeen) = ? OR date(LastSeen) = ?
+                     ORDER BY FirstSeen`;
+        db.all(sql, [date, date], (err, rows) => {
+            if (err) return res.status(500).json({ error: err.message });
+
+            const target = normalizeName(name).toLowerCase();
+            const intervals = [];
+            let canonicalName = null;
+            for (const r of rows) {
+                const norm = normalizeName(r.Name);
+                // Match if normalized names are equal (case-insensitive)
+                if (norm.toLowerCase() !== target) continue;
+                canonicalName = canonicalName || norm;
+                const start = new Date(r.FirstSeen);
+                const end = new Date(r.LastSeen || r.FirstSeen);
+                const clamped = clampIntervalToDay([start, end], date);
+                if (clamped) intervals.push(clamped);
+            }
+
+            if (!intervals.length) {
+                return res.json({ employee: name, date, sessions: [], total_hours: '0.00', first_in: null, last_out: null });
+            }
+
+            const merged = mergeSessions(intervals, gap);
+            const sessions = merged.map(([s, e]) => ({ in_time: toLocalISOString(s), out_time: toLocalISOString(e) }));
+            const totalMinutes = merged.reduce((acc, [s, e]) => acc + (e - s) / (1000 * 60), 0);
+
+            res.json({
+                employee: canonicalName || name,
+                date,
+                sessions,
+                total_hours: Number(totalMinutes / 60).toFixed(2),
+                first_in: sessions[0]?.in_time || null,
+                last_out: sessions[sessions.length - 1]?.out_time || null
+            });
+        });
+    } catch (e) {
+        console.error('/api/day-sessions error:', e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
 });
